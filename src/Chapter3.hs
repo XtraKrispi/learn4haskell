@@ -344,6 +344,15 @@ of a book, but you are not limited only by the book properties we described.
 Create your own book type of your dreams!
 -}
 
+type ImageUrl = String
+
+data Book = MkBook {
+    bookName :: String
+  , bookAuthor :: String
+  , bookCover :: ImageUrl
+  , bookPages :: Int
+}
+
 {- |
 =⚔️= Task 2
 
@@ -373,6 +382,24 @@ after the fight. The battle has the following possible outcomes:
    doesn't earn any money and keeps what they had before.
 
 -}
+
+type Gold = Int
+type Health = Int
+type AttackPower = Int
+data Entity = MkEntity {
+    entityHealth :: Health
+  , entityAttack :: AttackPower
+  , entityGold :: Gold
+}
+
+type Knight = Entity
+type Monster = Entity
+
+fight :: Monster -> Knight -> Gold
+fight (MkEntity mHealth mAttack mGold) (MkEntity kHealth kAttack kGold) 
+  | kAttack >= mHealth = mGold + kGold
+  | mAttack >= kHealth = -1
+  | otherwise = kGold                             
 
 {- |
 =🛡= Sum types
@@ -460,6 +487,18 @@ Create a simple enumeration for the meal types (e.g. breakfast). The one who
 comes up with the most number of names wins the challenge. Use your creativity!
 -}
 
+data Meal = 
+    Breakfast
+  | Lunch
+  | Dinner
+  | Supper
+  | Elevensies
+  | SecondBreakfast
+  | MorningSnack
+  | Brunch
+  | AfternoonSnack
+  | MidnightSnack
+
 {- |
 =⚔️= Task 4
 
@@ -480,6 +519,20 @@ After defining the city, implement the following functions:
    and at least 10 living people inside
 -}
 
+data House = 
+    SinglePerson
+  | TwoPeople
+  | ThreePeople
+  | FourPeople
+
+data ChurchOrLibrary = 
+    Church
+  | Library
+
+data City = MkCity {
+   cityChurchOrLibrary :: ChurchOrLibrary
+  ,cityHouses :: [House]
+}
 {-
 =🛡= Newtypes
 

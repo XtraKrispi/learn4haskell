@@ -348,7 +348,8 @@ from it!
 ghci> :l src/Chapter2.hs
 -}
 subList :: Int -> Int -> [a] -> [a]
-subList f t = take ((t + 1) - f) . drop f 
+subList f t xs | f >= 0 && t >= f = take ((t + 1) - f) . drop f $ xs
+               | otherwise = []
 
 {- |
 =⚔️= Task 4

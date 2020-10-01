@@ -114,23 +114,30 @@ As always, try to guess the output first! And don't forget to insert
 the output in here:
 
 >>> :k Char
+Char :: *
 
 >>> :k Bool
+Bool :: *
 
 >>> :k [Int]
+[Int] :: *
 
 >>> :k []
+[] :: * -> *
 
 >>> :k (->)
+(->) :: * -> * -> *
 
 >>> :k Either
+Either :: * -> * -> *
 
 >>> data Trinity a b c = MkTrinity a b c
 >>> :k Trinity
+Trinity :: * -> * -> * -> *
 
 >>> data IntBox f = MkIntBox (f Int)
 >>> :k IntBox
-
+IntBox :: (* -> *) -> *
 -}
 
 {- |
@@ -282,7 +289,6 @@ data Secret e a
     | Reward a
     deriving (Show, Eq)
 
-
 {- |
 Functor works with types that have kind `* -> *` but our 'Secret' has
 kind `* -> * -> *`. What should we do? Don't worry. We can partially
@@ -293,7 +299,8 @@ values and apply them to the type level?
 -}
 instance Functor (Secret e) where
     fmap :: (a -> b) -> Secret e a -> Secret e b
-    fmap = error "fmap for Box: not implemented!"
+    fmap _ (Trap e) = Trap e
+    fmap fn (Reward a) = Reward $ fn a
 
 {- |
 =⚔️= Task 3
@@ -306,6 +313,11 @@ typeclasses for standard data types.
 data List a
     = Empty
     | Cons a (List a)
+    deriving (Show) -- for testing
+
+instance Functor List where
+  fmap _ Empty = Empty
+  fmap fn (Cons a rest) = Cons (fn a) (fmap fn rest)
 
 {- |
 =🛡= Applicative
@@ -472,10 +484,12 @@ Implement the Applicative instance for our 'Secret' data type from before.
 -}
 instance Applicative (Secret e) where
     pure :: a -> Secret e a
-    pure = error "pure Secret: Not implemented!"
+    pure = Reward 
 
     (<*>) :: Secret e (a -> b) -> Secret e a -> Secret e b
-    (<*>) = error "(<*>) Secret: Not implemented!"
+    (Trap e) <*> _ = Trap e
+    _ <*> (Trap e) = Trap e
+    (Reward fn) <*> (Reward a) = Reward $ fn a
 
 {- |
 =⚔️= Task 5
@@ -489,6 +503,22 @@ Implement the 'Applicative' instance for our 'List' type.
   type.
 -}
 
+concatList :: List a -> List a -> List a
+concatList Empty a = a
+concatList a Empty = a
+concatList (Cons a rest) b = Cons a (rest `concatList` b)
+   
+
+instance Applicative List where
+  pure :: a -> List a
+  pure a = Cons a Empty
+
+  (<*>) :: List (a -> b) -> List a -> List b
+  Empty <*> _ = Empty
+  _ <*> Empty = Empty
+  (Cons fn fns) <*> l =
+    let newList = fn <$> l
+    in  concatList newList $ fns <*> l 
 
 {- |
 =🛡= Monad
@@ -600,7 +630,8 @@ Implement the 'Monad' instance for our 'Secret' type.
 -}
 instance Monad (Secret e) where
     (>>=) :: Secret e a -> (a -> Secret e b) -> Secret e b
-    (>>=) = error "bind Secret: Not implemented!"
+    Trap e >>= _ = Trap e
+    (Reward a) >>= fn = fn a 
 
 {- |
 =⚔️= Task 7
@@ -611,6 +642,15 @@ Implement the 'Monad' instance for our lists.
   maybe a few) to flatten lists of lists to a single list.
 -}
 
+flatten :: List (List a) -> List a
+flatten Empty = Empty
+flatten (Cons l rest) = concatList l (flatten rest)
+
+instance Monad List where
+  (>>=) :: List a -> (a -> List b) -> List b
+  Empty >>= _ = Empty
+  l >>= fn = 
+    flatten $ fmap fn l
 
 {- |
 =💣= Task 8*: Before the Final Boss
@@ -628,8 +668,15 @@ Can you implement a monad version of AND, polymorphic over any monad?
 
 🕯 HINT: Use "(>>=)", "pure" and anonymous function
 -}
+
+-- This way works with the monad operators, but I prefer using Functor and Applicative
+-- for this particular solution (below)
 andM :: (Monad m) => m Bool -> m Bool -> m Bool
-andM = error "andM: Not implemented!"
+andM m1 m2 = m1 >>= (\a -> m2 >>= (\b -> pure $ a && b))
+
+andM' :: (Monad m) => m Bool -> m Bool -> m Bool
+andM' m1 m2 = (&&) <$> m1 <*> m2 
+
 
 {- |
 =🐉= Task 9*: Final Dungeon Boss

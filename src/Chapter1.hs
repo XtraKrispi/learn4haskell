@@ -539,13 +539,14 @@ value after "=" where the condition is true.
 Casual reminder about adding top-level type signatures for all functions :)
 -}
 mid :: Int -> Int -> Int -> Int
-mid x y z | x < y && x > z = x
-          | x < z && x > y = x
-          | y < x && y > z = y
-          | y < z && y > x = y
-          | z < x && z > y = z
-          | z < y && z > x = z
-          | otherwise = x
+mid x y z 
+  | x < y && x > z = x
+  | x < z && x > y = x
+  | y < x && y > z = y
+  | y < z && y > x = y
+  | z < x && z > y = z
+  | z < y && z > x = z
+  | otherwise = x
 
 {- |
 =⚔️= Task 8
@@ -560,12 +561,13 @@ True
 False
 -}
 isVowel :: Char -> Bool
-isVowel c | c == 'a' = True
-          | c == 'e' = True
-          | c == 'i' = True
-          | c == 'o' = True
-          | c == 'u' = True
-          | otherwise = False
+isVowel c 
+  | c == 'a' = True
+  | c == 'e' = True
+  | c == 'i' = True
+  | c == 'o' = True
+  | c == 'u' = True
+  | otherwise = False
 
 
 {- |
@@ -631,8 +633,7 @@ specifying complex expressions.
 sumLast2 :: Int -> Int
 sumLast2 n = 
   let lastTwo = (abs n) `mod` 100
-      lastOneInLastTwo = lastTwo `mod` 10
-      tensDigit = lastTwo `div` 10
+      (tensDigit, lastOneInLastTwo) = lastTwo `divMod` 10
   in tensDigit + lastOneInLastTwo
       
 
@@ -655,9 +656,10 @@ You need to use recursion in this task. Feel free to return to it later, if you
 aren't ready for this boss yet!
 -}
 firstDigit :: Int -> Int
-firstDigit n | (abs n) < 10 = abs n
-             | otherwise = firstDigit ((abs n) `div` 10)
-
+firstDigit n = go (abs n)
+  where go n' 
+          | n' < 10 = n'
+          | otherwise = go (n' `div` 10)
 
 {-
 You did it! Now it is time to the open pull request with your changes

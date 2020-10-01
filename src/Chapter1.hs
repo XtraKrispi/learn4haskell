@@ -475,7 +475,7 @@ Implement a function that returns the last digit of a given number.
 -}
 -- DON'T FORGET TO SPECIFY THE TYPE IN HERE
 lastDigit :: Int -> Int
-lastDigit n = n `mod` 10
+lastDigit n = (abs n) `mod` 10
 
 
 {- |
@@ -655,8 +655,8 @@ You need to use recursion in this task. Feel free to return to it later, if you
 aren't ready for this boss yet!
 -}
 firstDigit :: Int -> Int
-firstDigit n | n < 10 = n
-             | otherwise = firstDigit (n `div` 10)
+firstDigit n | (abs n) < 10 = abs n
+             | otherwise = firstDigit ((abs n) `div` 10)
 
 
 {-

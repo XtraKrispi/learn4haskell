@@ -186,31 +186,31 @@ Evaluate the following expressions in GHCi and insert the answers. Try
 to guess first, what you will see.
 
 >>> [10, 2] ++ [3, 1, 5]
-[10, 2, 3, 1,5]
+[10,2,3,1,5]
 
 >>> [] ++ [1, 4]  -- [] is an empty list
 [1,4]
 
 >>> 3 : [1, 2]
-[3, 1, 2]
+[3,1,2]
 
 >>> 4 : 2 : [5, 10]  -- prepend multiple elements
-[4, 2, 5, 10]
+[4,2,5,10]
 
 >>> [1 .. 10]  -- list ranges
-[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+[1,2,3,4,5,6,7,8,9,10]
 
 >>> [10 .. 1]
 []
 
 >>> [10, 9 .. 1]  -- backwards list with explicit step
-[10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+[10,9,8,7,6,5,4,3,2,1]
 
 >>> length [4, 10, 5]  -- list length
 3
 
 >>> replicate 5 True
-[True, True, True, True, True]
+[True,True,True,True,True]
 
 >>> take 5 "Hello, World!"
 "Hello"
@@ -219,10 +219,10 @@ to guess first, what you will see.
 ", World!"
 
 >>> zip "abc" [1, 2, 3]  -- convert two lists to a single list of pairs
-[('a', 1), ('b', 2), ('c', 3)]
+[('a',1),('b',2),('c',3)]
 
 >>> words "Hello   Haskell     World!"  -- split the string into the list of words
-["Hello", "Haskell", "World!"]
+["Hello","Haskell","World!"]
 
 
 👩‍🔬 Haskell has a lot of syntax sugar. In the case with lists, any
@@ -348,7 +348,7 @@ from it!
 ghci> :l src/Chapter2.hs
 -}
 subList :: Int -> Int -> [a] -> [a]
-subList = error "subList: Not implemented!"
+subList f t = take ((t + 1) - f) . drop f 
 
 {- |
 =⚔️= Task 4
@@ -361,7 +361,10 @@ Implement a function that returns only the first half of a given list.
 "b"
 -}
 -- PUT THE FUNCTION TYPE IN HERE
-firstHalf l = error "firstHalf: Not implemented!"
+firstHalf :: [a] -> [a]
+firstHalf l = 
+  let numElems = length l `div` 2
+  in  take numElems l
 
 
 {- |
@@ -512,7 +515,9 @@ True
 >>> isThird42 [42, 42, 0, 42]
 False
 -}
-isThird42 = error "isThird42: Not implemented!"
+isThird42 :: [Int] -> Bool
+isThird42 (_:_:42:_) = True
+isThird42 _ = False
 
 
 {- |
@@ -617,7 +622,9 @@ Implement a function that duplicates each element of the list
 
 -}
 duplicate :: [a] -> [a]
-duplicate = error "duplicate: Not implemented!"
+duplicate xs = go xs []
+  where go [] accum = accum
+        go (y:ys) accum = go ys (accum ++ [y,y])
 
 
 {- |
@@ -632,8 +639,12 @@ Write a function that takes elements of a list only on even positions.
 >>> takeEven [2, 1, 3, 5, 4]
 [2,3,4]
 -}
-takeEven = error "takeEven: Not implemented!"
-
+takeEven :: [a] -> [a]
+takeEven l = go l []
+  where go [] accum = accum
+        go [x] accum = accum ++ [x]
+        go (x:_:xs) accum = go xs (accum ++ [x])
+        
 {- |
 =🛡= Higher-order functions
 
@@ -739,7 +750,7 @@ value of the element itself
 🕯 HINT: Use combination of 'map' and 'replicate'
 -}
 smartReplicate :: [Int] -> [Int]
-smartReplicate l = error "smartReplicate: Not implemented!"
+smartReplicate l = concat $ map (\x -> replicate x x) l
 
 {- |
 =⚔️= Task 9
@@ -752,7 +763,8 @@ the list with only those lists that contain a passed element.
 
 🕯 HINT: Use the 'elem' function to check whether an element belongs to a list
 -}
-contains = error "contains: Not implemented!"
+contains :: Int -> [[Int]] -> [[Int]]
+contains n xs = filter (\x -> n `elem` x) xs
 
 
 {- |
@@ -792,13 +804,15 @@ Let's now try to eta-reduce some of the functions and ensure that we
 mastered the skill of eta-reducing.
 -}
 divideTenBy :: Int -> Int
-divideTenBy x = div 10 x
+divideTenBy = div 10
 
 -- TODO: type ;)
-listElementsLessThan x l = filter (< x) l
+listElementsLessThan :: Int -> [Int] -> [Int]
+listElementsLessThan x = filter (< x)
 
 -- Can you eta-reduce this one???
-pairMul xs ys = zipWith (*) xs ys
+pairMul :: [Int] -> [Int] -> [Int]
+pairMul = zipWith (*)
 
 {- |
 =🛡= Lazy evaluation
@@ -853,7 +867,9 @@ list.
 
 🕯 HINT: Use the 'cycle' function
 -}
-rotate = error "rotate: Not implemented!"
+rotate :: Int -> [Int] -> [Int]
+rotate n xs | n < 0 = [] 
+            | otherwise = take (length xs) . drop n $ cycle xs
 
 {- |
 =💣= Task 12*
@@ -869,7 +885,10 @@ and reverses it.
   function, but in this task, you need to implement it manually. No
   cheating!
 -}
-rewind = error "rewind: Not Implemented!"
+rewind :: [a] -> [a]
+rewind xs = go xs []
+  where go [] accum = accum
+        go (y:ys) accum = go ys (y : accum)
 
 
 {-

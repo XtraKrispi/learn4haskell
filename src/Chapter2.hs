@@ -622,10 +622,10 @@ Implement a function that duplicates each element of the list
 "aabbaacc"
 
 -}
+
 duplicate :: [a] -> [a]
-duplicate xs = go xs []
-  where go [] accum = accum
-        go (y:ys) accum = go ys (accum ++ [y,y])
+duplicate [] = []
+duplicate (x:xs) = x : x : duplicate xs
 
 
 {- |
@@ -640,6 +640,11 @@ Write a function that takes elements of a list only on even positions.
 >>> takeEven [2, 1, 3, 5, 4]
 [2,3,4]
 -}
+takeEven' :: [a] -> [a]
+takeEven' [] = []
+takeEven' (x:_:xs) = x : takeEven' xs
+takeEven' [x] = [x]
+
 takeEven :: [a] -> [a]
 takeEven l = go l []
   where go [] accum = accum
@@ -765,7 +770,7 @@ the list with only those lists that contain a passed element.
 🕯 HINT: Use the 'elem' function to check whether an element belongs to a list
 -}
 contains :: Int -> [[Int]] -> [[Int]]
-contains n xs = filter (\x -> n `elem` x) xs
+contains n xs = filter (elem n) xs
 
 
 {- |

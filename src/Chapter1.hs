@@ -630,7 +630,7 @@ specifying complex expressions.
 -}
 sumLast2 :: Int -> Int
 sumLast2 n = 
-  let lastTwo = n `mod` 100
+  let lastTwo = (abs n) `mod` 100
       lastOneInLastTwo = lastTwo `mod` 10
       tensDigit = lastTwo `div` 10
   in tensDigit + lastOneInLastTwo

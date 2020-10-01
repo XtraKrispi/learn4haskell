@@ -383,19 +383,16 @@ after the fight. The battle has the following possible outcomes:
 
 -}
 
-type Gold = Int
-type Health = Int
-type AttackPower = Int
 data Entity = MkEntity {
-    entityHealth :: Health
-  , entityAttack :: AttackPower
-  , entityGold :: Gold
+    entityHealth :: Int
+  , entityAttack :: Int
+  , entityGold :: Int
 }
 
-type Knight = Entity
-type Monster = Entity
+-- I previously has type aliases here for Knight and Monster, but they're conflicting
+-- with *better* definitions below
 
-fight :: Monster -> Knight -> Gold
+fight :: Entity -> Entity -> Int
 fight (MkEntity mHealth mAttack mGold) (MkEntity kHealth kAttack kGold) 
   | kAttack >= mHealth = mGold + kGold
   | mAttack >= kHealth = -1
@@ -529,10 +526,41 @@ data ChurchOrLibrary =
     Church
   | Library
 
+data CastleAndWalls = 
+    NoCastle
+  | Castle String
+  | CastleAndWalls String
+
 data City = MkCity {
-   cityChurchOrLibrary :: ChurchOrLibrary
-  ,cityHouses :: [House]
+    cityCastleAndWalls  :: CastleAndWalls
+  , cityChurchOrLibrary :: ChurchOrLibrary
+  , cityHouses          :: [House]
 }
+
+buildCastle :: String -> City -> City
+buildCastle name city = 
+  let newCastle = 
+        case cityCastleAndWalls city of
+          CastleAndWalls _ -> CastleAndWalls name
+          _                -> Castle name
+  in city { cityCastleAndWalls = newCastle }
+
+buildHouse :: House -> City -> City
+buildHouse house city = 
+  city { cityHouses = house : cityHouses city}
+
+buildWalls :: City -> City
+buildWalls city = 
+  let newCastle = 
+        case cityCastleAndWalls city of
+          -- This is the only situation that changes our castle type
+          -- So we can just give back the original version in the other 
+          -- cases
+          Castle s 
+            | (length $ cityHouses city) >= 10 -> CastleAndWalls s
+          _                                    -> cityCastleAndWalls city
+  in city { cityCastleAndWalls = newCastle }
+    
 {-
 =🛡= Newtypes
 
@@ -613,22 +641,34 @@ introducing extra newtypes.
 🕯 HINT: if you complete this task properly, you don't need to change the
     implementation of the "hitPlayer" function at all!
 -}
+
+newtype Health = MkHealth { unHealth :: Int }
+newtype Armor = MkArmor { unArmor :: Int }
+newtype Attack = MkAttack { unAttack :: Int }
+newtype Dexterity = MkDexterity { unDexterity :: Int }
+newtype Strength = MkStrength { unStrength :: Int }
+newtype Defense = MkDefense { unDefense :: Int }
+newtype Damage = MkDamage { unDamage :: Int }
+
 data Player = Player
-    { playerHealth    :: Int
-    , playerArmor     :: Int
-    , playerAttack    :: Int
-    , playerDexterity :: Int
-    , playerStrength  :: Int
+    { playerHealth    :: Health
+    , playerArmor     :: Armor
+    , playerAttack    :: Attack
+    , playerDexterity :: Dexterity
+    , playerStrength  :: Strength
     }
 
-calculatePlayerDamage :: Int -> Int -> Int
-calculatePlayerDamage attack strength = attack + strength
+calculatePlayerDamage :: Attack -> Strength -> Damage
+calculatePlayerDamage (MkAttack attack) (MkStrength strength) = 
+  MkDamage $ attack + strength
 
-calculatePlayerDefense :: Int -> Int -> Int
-calculatePlayerDefense armor dexterity = armor * dexterity
+calculatePlayerDefense :: Armor -> Dexterity -> Defense
+calculatePlayerDefense (MkArmor armor) (MkDexterity dexterity) = 
+  MkDefense $ armor * dexterity
 
-calculatePlayerHit :: Int -> Int -> Int -> Int
-calculatePlayerHit damage defense health = health + defense - damage
+calculatePlayerHit :: Damage -> Defense -> Health -> Health
+calculatePlayerHit (MkDamage damage) (MkDefense defense) (MkHealth health) = 
+  MkHealth $ health + defense - damage
 
 -- The second player hits first player and the new first player is returned
 hitPlayer :: Player -> Player -> Player
@@ -806,6 +846,16 @@ parametrise data types in places where values can be of any general type.
   maybe-treasure ;)
 -}
 
+data Treasure
+
+-- Assuming the dragon always has a power, otherwise it would be Maybe a
+newtype Dragon a = MkDragon { unDragon :: a }
+
+data Lair a = MkLair {
+    lairTreasure :: Maybe Treasure
+  , lairDragon   :: Dragon a
+}
+
 {-
 =🛡= Typeclasses
 
@@ -960,9 +1010,23 @@ Implement instances of "Append" for the following types:
   ✧ *(Challenge): "Maybe" where append is appending of values inside "Just" constructors
 
 -}
+
+newtype Gold = MkGold { unGold :: Int }
+
 class Append a where
     append :: a -> a -> a
 
+instance Append Gold where
+  append (MkGold a) (MkGold b) = MkGold $ a + b
+
+instance Append [a] where
+  append = (++)
+
+instance Append a => Append (Maybe a) where
+  append (Just a) (Just b) = Just $ a `append` b
+  append (Just a) Nothing = Just a
+  append (Nothing) (Just a) = Just a
+  append Nothing Nothing = Nothing
 
 {-
 =🛡= Standard Typeclasses and Deriving
@@ -1023,7 +1087,28 @@ implement the following functions:
 
 🕯 HINT: to implement this task, derive some standard typeclasses
 -}
+data DayOfWeek =
+    Monday
+  | Tuesday
+  | Wednesday
+  | Thursday
+  | Friday
+  | Saturday
+  | Sunday
+  deriving (Enum, Bounded, Eq, Ord, Show)
 
+isWeekend :: DayOfWeek -> Bool
+isWeekend Saturday = True
+isWeekend Sunday = True
+isWeekend _ = False
+
+nextDay :: DayOfWeek -> DayOfWeek
+nextDay d | d == maxBound = minBound
+          | otherwise = succ d
+
+daysToParty :: DayOfWeek -> Int
+daysToParty d = (fromEnum Friday) - (fromEnum d)
+          
 {-
 =💣= Task 9*
 
@@ -1059,6 +1144,111 @@ Implement data types and typeclasses, describing such a battle between two
 contestants, and write a function that decides the outcome of a fight!
 -}
 
+-- This solution does not call back to data types created above, it is self-contained
+newtype AttackPower = AttackPower { unAttackPower :: Int }
+newtype HealthAmount = HealthAmount { unHealthAmount :: Int }
+newtype DefenseAmount = DefenseAmount { unDefenseAmount :: Int }
+
+data Knight = Knight {
+    knightHealth :: HealthAmount
+  , knightAttack :: AttackPower
+  , knightDefense :: DefenseAmount
+}
+
+data Monster = Monster {
+    monsterHealth :: HealthAmount
+  , monsterAttack :: AttackPower
+}
+
+data KnightAction = 
+    KnightAttack
+  | KnightDrinkHealthPotion
+  | KnightCastSpell
+
+data MonsterAction = 
+    MonsterAttack
+  | MonsterRunAway
+
+data Winner = WinnerKnight Knight | WinnerMonster Monster | Indeterminate
+
+class HasHealth a where
+  healthAmount :: a -> HealthAmount
+  updateHealth :: HealthAmount -> a -> a
+
+class HasAttack a where
+  attackPower :: a -> AttackPower
+
+class HasDefense a where
+  defenseAmount :: a -> DefenseAmount
+  updateDefense :: DefenseAmount -> a -> a
+
+instance HasHealth Knight where
+  healthAmount = knightHealth
+  updateHealth ha k = k { knightHealth = ha }
+
+instance HasHealth Monster where
+  healthAmount = monsterHealth
+  updateHealth ha m = m { monsterHealth = ha }
+
+instance HasAttack Knight where
+  attackPower = knightAttack
+
+instance HasAttack Monster where
+  attackPower = monsterAttack
+
+instance HasDefense Knight where
+  defenseAmount = knightDefense
+  updateDefense d k = k { knightDefense = d }
+
+instance HasDefense Monster where
+  defenseAmount _ = DefenseAmount 0
+  updateDefense _ m = m
+
+performCastSpell :: HasDefense a => a -> DefenseAmount
+performCastSpell a = DefenseAmount $ unDefenseAmount (defenseAmount a) + 1
+
+performDrinkHealthPotion :: HasHealth a => a -> HealthAmount
+performDrinkHealthPotion a = HealthAmount $ unHealthAmount (healthAmount a) + 1
+
+performAttack :: (HasAttack a, HasHealth b, HasDefense b) => a -> b -> HealthAmount
+performAttack a b = 
+  let actualAttack = max 0 $ (unAttackPower (attackPower a)) - (unDefenseAmount (defenseAmount b))
+  in HealthAmount $ max 0 $ (unHealthAmount $ healthAmount b) - actualAttack
+
+battle :: (Knight, [KnightAction]) -> (Monster, [MonsterAction]) -> Winner
+battle knightData monsterData =
+  go (fst knightData, cycle (snd knightData)) (fst monsterData, cycle (snd monsterData))
+  where 
+    -- If the monster is going to run away, even if the knight would kill it,
+    -- the knight will always win
+    go (knight, _) (_, (MonsterRunAway:_)) = WinnerKnight knight
+    go (knight, (kAction:kActions)) (monster, (mAction:mActions)) = 
+      let (knightResult, monsterResult) = applyKnightAction kAction knight monster
+          (monsterResult', knightResult') = applyMonsterAction mAction monsterResult knightResult
+          mH = unHealthAmount $ healthAmount monsterResult
+          kH = unHealthAmount $ healthAmount knightResult'
+      in 
+        case (kH, mH) of
+          -- Knight goes first, so if the monster is dead, knight wins
+          (_, 0) -> WinnerKnight knightResult
+          -- From the second encounter, if knight is dead, monster wins
+          (0, _) -> WinnerMonster monsterResult
+          -- Still alive, take the new knight and monster and run it again
+          _      -> battle (knightResult', kActions) (monsterResult', mActions)
+    go _ _ = Indeterminate
+
+applyKnightAction :: KnightAction -> Knight -> Monster -> (Knight, Monster)
+applyKnightAction KnightAttack k m = 
+  (k, updateHealth (performAttack k m) m)
+applyKnightAction KnightDrinkHealthPotion k m = 
+  (updateHealth (performDrinkHealthPotion k) k, m)
+applyKnightAction KnightCastSpell k m =
+  (updateDefense (performCastSpell k) k, m)
+
+applyMonsterAction :: MonsterAction -> Monster -> Knight -> (Monster, Knight)
+applyMonsterAction MonsterAttack m k = 
+  (m, updateHealth (performAttack m k) k)
+applyMonsterAction MonsterRunAway m k = (m, k)
 
 {-
 You did it! Now it is time to the open pull request with your changes

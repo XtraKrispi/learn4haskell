@@ -630,7 +630,6 @@ flatten (Cons l rest) = concatList l (flatten rest)
 
 instance Monad List where
   (>>=) :: List a -> (a -> List b) -> List b
-  Empty >>= _ = Empty
   l >>= fn =
     flatten $ fmap fn l
 
@@ -653,10 +652,13 @@ instance Monad List where
 -- This way works with the monad operators, but I prefer using Functor and Applicative
 -- for this particular solution (below)
 andM :: (Monad m) => m Bool -> m Bool -> m Bool
-andM m1 m2 = m1 >>= (\a -> m2 >>= (\b -> pure $ a && b))
-
-andM' :: (Monad m) => m Bool -> m Bool -> m Bool
-andM' m1 m2 = (&&) <$> m1 <*> m2
+andM m1 m2 =
+  m1
+    >>= ( \a ->
+            if a == False
+              then pure False
+              else m2 >>= (\b -> pure $ a && b)
+        )
 
 -- |
 -- =🐉= Task 9*: Final Dungeon Boss

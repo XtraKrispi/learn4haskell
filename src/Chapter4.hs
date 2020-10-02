@@ -655,9 +655,9 @@ andM :: (Monad m) => m Bool -> m Bool -> m Bool
 andM m1 m2 =
   m1
     >>= ( \a ->
-            if a == False
-              then pure False
-              else m2 >>= (\b -> pure $ a && b)
+            if a
+              then m2 >>= (\b -> pure $ a && b)
+              else pure False
         )
 
 -- |
